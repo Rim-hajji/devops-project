@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>أقرب المساجد إليك</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            direction: rtl;
+        }
+
+        h2 {
+            text-align: center;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            margin: 0;
+        }
+
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🕌 أقرب المساجد إليك</h2>
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    const map = L.map('map').setView([0, 0], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    function loadMosques(lat, lon) {
+        // Requête Overpass pour les mosquées à 3 km autour de l'utilisateur
+        const query = `
+            [out:json];
+            node["amenity"="place_of_worship"]["religion"="muslim"](around:3000,${lat},${lon});
+            out;
+        `;
+
+        fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query
+        })
+        .then(res => res.json())
+        .then(data => {
+            map.setView([lat, lon], 14);
+
+            // Marqueur pour l'utilisateur
+            L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup("📍 موقعك الحالي")
+                .openPopup();
+
+            // Marqueurs pour les mosquées
+            data.elements.forEach(mosque => {
+                const name = mosque.tags.name || "مسجد";
+                L.marker([mosque.lat, mosque.lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${name}</b>`);
+            });
+        })
+        .catch(err => {
+            alert("تعذر تحميل قائمة المساجد");
+            console.error(err);
+        });
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                loadMosques(pos.coords.latitude, pos.coords.longitude);
+            },
+            () => {
+                alert("الرجاء تفعيل الموقع لرؤية أقرب المساجد.");
+            }
+        );
+    } else {
+        alert("المتصفح لا يدعم تحديد الموقع.");
+    }
+</script>
+
+</body>
+</html>
