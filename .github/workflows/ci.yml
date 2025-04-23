@@ -1,0 +1,26 @@
+name: CI - Muslim Soul
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Cloner le code
+      uses: actions/checkout@v2
+
+    - name: Installer Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Installer les dépendances
+      run: |
+        pip install -r requirements.txt
+
+    - name: Construire l’image Docker
+      run: docker build -t muslim-soul .
